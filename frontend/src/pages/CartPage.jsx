@@ -1,4 +1,8 @@
 import React from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+
+// Import all necessary components and hooks
 import { 
   Container, 
   Typography, 
@@ -9,202 +13,203 @@ import {
   TableContainer, 
   TableHead, 
   TableRow, 
-  Paper, 
   Button,
   IconButton,
-  Grid
+  Grid,
+  Stack,
+  Paper, // Used for mobile cards
+  useTheme, // To access theme breakpoints
+  useMediaQuery // To detect screen size
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+
+// The EmptyCart component remains the same and is already responsive.
+const EmptyCart = () => (
+  <Container maxWidth="sm">
+    <Box my={8} textAlign="center" display="flex" flexDirection="column" alignItems="center" gap={2}>
+      <ShoppingBagOutlinedIcon sx={{ fontSize: '4rem', color: 'text.secondary' }} />
+      <Typography variant="h5" component="h1" sx={{ fontFamily: "'Laginchy', serif" }}>
+        Your Bag is Empty
+      </Typography>
+      <Typography color="text.secondary" sx={{ mb: 2 }}>
+        Looks like you haven't added anything to your bag yet.
+      </Typography>
+      <Button 
+        variant="contained" 
+        color="primary" 
+        component={RouterLink} 
+        to="/"
+        size="large"
+      >
+        Continue Shopping
+      </Button>
+    </Box>
+  </Container>
+);
 
 const CartPage = () => {
   const { cart, removeFromCart, updateQuantity } = useCart();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // TRUE on screens smaller than medium (tablet/mobile)
 
-  // Function to handle quantity changes
   const handleQuantityChange = (productId, variantId, newQuantity) => {
     if (newQuantity > 0) {
       updateQuantity(productId, variantId, newQuantity);
     }
   };
 
-  // Safe price extraction with fallbacks
-  const getPrice = (item) => {
-    const variantPrice = Number(item?.variant?.price);
-    const discountPrice = Number(item?.product?.discount_price);
-    const productPrice = Number(item?.product?.price);
+  const getPrice = (item) => Number(item?.variant?.price) || Number(item?.product?.discount_price) || Number(item?.product?.price) || 0;
+  const formatPrice = (price) => `$${Number(price).toFixed(2)}`;
+  
+  const cartTotal = cart.reduce((total, item) => total + getPrice(item) * item.quantity, 0);
 
-    if (!isNaN(variantPrice) && variantPrice > 0) return variantPrice;
-    if (!isNaN(discountPrice) && discountPrice > 0) return discountPrice;
-    if (!isNaN(productPrice) && productPrice > 0) return productPrice;
-
-    return 0; // fallback
-  };
-
-  // Format price safely
-  const formatPrice = (price) => {
-    const numericPrice = Number(price);
-    return isNaN(numericPrice) ? 'N/A' : numericPrice.toFixed(2);
-  };
-
-  // Handle empty cart case
   if (cart.length === 0) {
-    return (
-      <Container maxWidth="lg">
-        <Box my={4} textAlign="center">
-          <Typography variant="h4" gutterBottom>
-            Your cart is empty
-          </Typography>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            component={Link} 
-            to="/products"
-          >
-            Continue Shopping
-          </Button>
-        </Box>
-      </Container>
-    );
+    return <EmptyCart />;
   }
 
-  // Calculate total cart value
-  const calculateCartTotal = () => {
-    return cart.reduce((total, item) => {
-      const price = getPrice(item);
-      return total + (price * item.quantity);
-    }, 0);
-  };
-
-  const formattedCartTotal = formatPrice(calculateCartTotal());
+  // --- Reusable JSX for shared components ---
+  const orderSummary = (
+    <Box 
+      p={{ xs: 2, sm: 3 }} // Responsive padding
+      sx={{ 
+        backgroundColor: 'background.paper',
+        borderRadius: '8px', 
+        border: `1px solid ${theme.palette.mode === 'light' ? '#EADAD4' : 'divider'}` // blush border
+      }}
+    >
+      <Typography variant="h6" gutterBottom sx={{ fontFamily: "'Laginchy', serif" }}>
+        Order Summary
+      </Typography>
+      <Stack spacing={2} my={3}>
+        <Stack direction="row" justifyContent="space-between">
+          <Typography>Subtotal</Typography>
+          <Typography>{formatPrice(cartTotal)}</Typography>
+        </Stack>
+        <Stack direction="row" justifyContent="space-between">
+          <Typography>Shipping</Typography>
+          <Typography>Calculated at next step</Typography>
+        </Stack>
+      </Stack>
+      <Stack direction="row" justifyContent="space-between" mb={3}>
+        <Typography variant="h6">Estimated Total</Typography>
+        <Typography variant="h6">{formatPrice(cartTotal)}</Typography>
+      </Stack>
+      <Button 
+        variant="contained" 
+        color="primary" 
+        fullWidth
+        size="large"
+        component={RouterLink}
+        to="/checkout"
+        disabled={cart.length === 0}
+      >
+        Proceed to Checkout
+      </Button>
+    </Box>
+  );
 
   return (
-    <Container maxWidth="lg">
-      <Box my={4}>
-        <Typography variant="h4" gutterBottom>
-          Shopping Cart
-        </Typography>
-        
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Product</TableCell>
-                <TableCell>Price</TableCell>
-                <TableCell>Quantity</TableCell>
-                <TableCell>Total</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {cart.map((item) => {
-                const price = getPrice(item);
-                const itemTotal = price * item.quantity;
-                
-                return (
-                  <TableRow key={`${item.product.id}-${item.variant.id}`}>
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <img 
-                          src={item.product.images?.[0]?.image} 
-                          alt={item.product.name} 
-                          style={{ 
-                            width: 50, 
-                            height: 50, 
-                            marginRight: 16,
-                            objectFit: 'cover'
-                          }}
-                        />
-                        <div>
-                          <Typography>{item.product.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {item.variant.color} - {item.variant.size}
-                          </Typography>
-                        </div>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      ${formatPrice(price)}
-                    </TableCell>
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Button 
-                          size="small" 
-                          onClick={() => handleQuantityChange(
-                            item.product.id, 
-                            item.variant.id, 
-                            item.quantity - 1
-                          )}
-                          disabled={item.quantity <= 1}
-                        >
-                          -
-                        </Button>
-                        <Typography mx={1}>{item.quantity}</Typography>
-                        <Button 
-                          size="small" 
-                          onClick={() => handleQuantityChange(
-                            item.product.id, 
-                            item.variant.id, 
-                            item.quantity + 1
-                          )}
-                        >
-                          +
-                        </Button>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      ${formatPrice(itemTotal)}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton 
-                        onClick={() => removeFromCart(item.product.id, item.variant.id)}
-                        color="error"
-                      >
-                        <DeleteIcon />
+    <Container maxWidth="lg" sx={{ my: { xs: 3, md: 6 } }}>
+      <Typography variant="h4" component="h1" gutterBottom sx={{ fontFamily: "'Laginchy', serif", textAlign: 'center', mb: { xs: 3, md: 5 } }}>
+        Your Bag
+      </Typography>
+      
+      <Grid container spacing={{ xs: 3, md: 5 }}>
+        {/* --- MAIN CONTENT: Conditional rendering based on screen size --- */}
+        <Grid item xs={12} md={8}>
+          {isMobile ? (
+            // ===================================
+            // MOBILE VIEW: Card-based layout
+            // ===================================
+            <Stack spacing={3}>
+              {cart.map((item) => (
+                <Paper key={`${item.product.id}-${item.variant.id}`} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Stack direction="row" spacing={2}>
+                    <Box
+                      component="img"
+                      src={item.product.images?.[0]?.image} 
+                      alt={item.product.name}
+                      sx={{ width: 80, height: 80, borderRadius: '4px', objectFit: 'cover' }}
+                    />
+                    <Box flexGrow={1}>
+                      <Typography variant="body1" fontWeight={500}>{item.product.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">{item.variant.name || item.variant.size}</Typography>
+                      <Typography variant="body2" fontWeight={500}>{formatPrice(getPrice(item))}</Typography>
+                    </Box>
+                    <IconButton onClick={() => removeFromCart(item.product.id, item.variant.id)} size="small" sx={{ alignSelf: 'flex-start' }}>
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity - 1)}>
+                        <RemoveIcon fontSize="small" />
                       </IconButton>
-                    </TableCell>
+                      <Typography variant="body1" sx={{ px: 1, minWidth: '20px', textAlign: 'center' }}>{item.quantity}</Typography>
+                      <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity + 1)}>
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                    <Typography variant="h6">{formatPrice(getPrice(item) * item.quantity)}</Typography>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          ) : (
+            // ===================================
+            // DESKTOP VIEW: Table-based layout
+            // ===================================
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Product</TableCell>
+                    <TableCell align="center">Quantity</TableCell>
+                    <TableCell align="right">Total</TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {cart.map((item) => (
+                    <TableRow key={`${item.product.id}-${item.variant.id}`}>
+                      <TableCell>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Box component="img" src={item.product.images?.[0]?.image} alt={item.product.name} sx={{ width: 80, height: 80, borderRadius: '4px', objectFit: 'cover' }} />
+                          <Box>
+                            <Typography variant="body1" fontWeight={500}>{item.product.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">{item.variant.name || item.variant.size}</Typography>
+                            <Typography variant="body2" color="text.secondary">{formatPrice(getPrice(item))}</Typography>
+                            <IconButton onClick={() => removeFromCart(item.product.id, item.variant.id)} size="small" sx={{ border: 'none', mt: 1, p: 0, '&:hover': { color: 'primary.main', backgroundColor: 'transparent'} }}>
+                              <DeleteOutlineIcon fontSize="small"/>
+                            </IconButton>
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                          <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity - 1)}><RemoveIcon fontSize="small" /></IconButton>
+                          <Typography variant="body1" sx={{ px: 1, minWidth: '20px', textAlign: 'center' }}>{item.quantity}</Typography>
+                          <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity + 1)}><AddIcon fontSize="small" /></IconButton>
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body1" fontWeight={500}>{formatPrice(getPrice(item) * item.quantity)}</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Grid>
         
-        <Box mt={4}>
-          <Grid container justifyContent="flex-end">
-            <Grid item xs={12} md={4}>
-              <Box p={2} border={1} borderColor="divider" borderRadius={2}>
-                <Typography variant="h6" gutterBottom>
-                  Order Summary
-                </Typography>
-                <Box display="flex" justifyContent="space-between" mb={2}>
-                  <Typography>Subtotal:</Typography>
-                  <Typography>${formattedCartTotal}</Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between" mb={2}>
-                  <Typography>Shipping:</Typography>
-                  <Typography>Free</Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between" mb={2}>
-                  <Typography variant="h6">Total:</Typography>
-                  <Typography variant="h6">${formattedCartTotal}</Typography>
-                </Box>
-                <Button 
-                  variant="contained" 
-                  color="primary" 
-                  fullWidth
-                  component={Link}
-                  to="/checkout"
-                  size="large"
-                  disabled={cart.length === 0}
-                >
-                  Proceed to Checkout
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      </Box>
+        {/* --- ORDER SUMMARY: This grid layout handles responsiveness automatically --- */}
+        <Grid item xs={12} md={4}>
+          {orderSummary}
+        </Grid>
+      </Grid>
     </Container>
   );
 };
