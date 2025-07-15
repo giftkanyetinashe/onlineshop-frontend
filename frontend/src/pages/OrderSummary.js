@@ -10,7 +10,7 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  Collapse, // For the mobile animation
+  Collapse,
   IconButton,
 } from '@mui/material';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
@@ -20,40 +20,40 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 const OrderSummary = () => {
   const { cart } = useCart();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Detects mobile/tablet view
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // State for the mobile accordion view
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Helper functions
+  // Helper functions (no changes needed here)
   const getPrice = (item) => Number(item?.variant?.price) || Number(item?.product?.discount_price) || Number(item?.product?.price) || 0;
   const formatPrice = (price) => `$${Number(price).toFixed(2)}`;
   const cartTotal = cart.reduce((acc, item) => acc + (getPrice(item) * item.quantity), 0);
 
   if (cart.length === 0) {
-    return null; // Don't render anything if the cart is empty
+    return null;
   }
 
-  // --- Reusable JSX Blocks to avoid duplication ---
+  // --- Reusable JSX Blocks (Refactored for Brand Identity) ---
 
-  // Renders the list of items in the cart
   const cartItemsList = (
     <Stack spacing={2.5} my={3}>
       {cart.map(item => (
-        <Stack direction="row" key={`${item.product.id}-${item.variant.id}`} spacing={2} alignItems="center">
+        <Stack direction="row" key={`${item.product.id}-${item.variant.id}`} spacing={2} alignItems="flex-start">
           <Box
             component="img"
             src={item.product.images?.[0]?.image} 
             alt={item.product.name}
-            sx={{ width: 64, height: 64, borderRadius: '4px', objectFit: 'cover', border: '1px solid', borderColor: 'divider' }}
+            // Brand Change: Using 'blush' for a soft, on-brand border
+            sx={{ width: 64, height: 64, borderRadius: '4px', objectFit: 'cover', border: `1px solid ${theme.palette.blush}` }}
           />
           <Box flexGrow={1}>
+            {/* Brand Change: Emphasizing product name */}
             <Typography variant="body1" fontWeight={500}>{item.product.name}</Typography>
             <Typography variant="body2" color="text.secondary">
               Qty: {item.quantity}
             </Typography>
           </Box>
-          <Typography variant="body1" fontWeight={500}>
+          <Typography variant="body1" fontWeight={500} sx={{ flexShrink: 0 }}>
             {formatPrice(getPrice(item) * item.quantity)}
           </Typography>
         </Stack>
@@ -61,21 +61,22 @@ const OrderSummary = () => {
     </Stack>
   );
 
-  // Renders the price breakdown (subtotal, total, etc.)
   const priceDetails = (
-    <Stack spacing={2}>
+    <Stack spacing={1.5}>
       <Stack direction="row" justifyContent="space-between">
-        <Typography>Subtotal</Typography>
-        <Typography>{formatPrice(cartTotal)}</Typography>
+        <Typography variant="body2" color="text.secondary">Subtotal</Typography>
+        <Typography variant="body2" color="text.primary">{formatPrice(cartTotal)}</Typography>
       </Stack>
       <Stack direction="row" justifyContent="space-between">
-        <Typography>Shipping</Typography>
-        <Typography>Free</Typography>
+        <Typography variant="body2" color="text.secondary">Shipping</Typography>
+        <Typography variant="body2" color="text.primary">Free</Typography>
       </Stack>
-      <Divider />
-      <Stack direction="row" justifyContent="space-between">
-        <Typography variant="h6">Total</Typography>
-        <Typography variant="h6">{formatPrice(cartTotal)}</Typography>
+      {/* Brand Change: Using 'blush' for divider color */}
+      <Divider sx={{ my: 1.5, borderColor: theme.palette.blush }} />
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        {/* Brand Change: Using bold Circular Std for Total, not Laginchy */}
+        <Typography variant="body1" fontWeight="bold">Total</Typography>
+        <Typography variant="h6" component="span" fontWeight="bold">{formatPrice(cartTotal)}</Typography>
       </Stack>
     </Stack>
   );
@@ -85,9 +86,15 @@ const OrderSummary = () => {
   // ===================================
 
   if (isMobile) {
-    // --- MOBILE VIEW: Collapsible Accordion ---
+    // --- MOBILE VIEW: Collapsible Accordion (Refactored) ---
     return (
-      <Box sx={{ width: '100%', borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ 
+        width: '100%', 
+        // Brand Change: Using blush for a softer border
+        borderTop: `1px solid ${theme.palette.blush}`, 
+        borderBottom: `1px solid ${theme.palette.blush}`,
+        bgcolor: 'background.paper' // Using paper color for contrast
+      }}>
         <Stack 
           direction="row" 
           justifyContent="space-between" 
@@ -97,18 +104,21 @@ const OrderSummary = () => {
         >
           <Stack direction="row" alignItems="center" spacing={1}>
             <ShoppingBagOutlinedIcon color="primary" />
-            <Typography color="primary.main" fontWeight={500}>
+            {/* Brand Change: Applying button typography for consistent CTAs */}
+            <Typography sx={{ ...theme.typography.button, color: 'primary.main' }}>
               {isExpanded ? 'Hide' : 'Show'} order summary
             </Typography>
-            <IconButton size="small" sx={{ p: 0 }}>
+            <IconButton size="small" sx={{ p: 0.25 }} color="primary">
               {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Stack>
-          <Typography variant="h6">{formatPrice(cartTotal)}</Typography>
+          <Typography variant="h6" fontWeight="bold">{formatPrice(cartTotal)}</Typography>
         </Stack>
 
-        <Collapse in={isExpanded}>
-          <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          <Box sx={{ p: 2, pt: 0 }}>
+            {/* Brand Change: Divider for better visual separation */}
+            <Divider sx={{ mb: 3, borderColor: theme.palette.blush }} />
             {cartItemsList}
             {priceDetails}
           </Box>
@@ -117,20 +127,23 @@ const OrderSummary = () => {
     );
   }
 
-  // --- DESKTOP VIEW: Persistent Sidebar ---
+  // --- DESKTOP VIEW: Persistent Sidebar (Refactored) ---
   return (
     <Paper 
-      variant="outlined" 
+      elevation={0} // Brand Change: Flat design, no shadow
       sx={{ 
-        p: { xs: 2, sm: 4 }, 
-        borderRadius: 2
+        p: 4, 
+        // Brand Change: Soft border radius and on-brand border color
+        borderRadius: '8px', 
+        border: `1px solid ${theme.palette.blush}`,
+        // Use 'paper' background, which is white, to pop against the 'alabaster' page background
+        bgcolor: 'background.paper', 
       }}
     >
-      <Typography variant="h6" component="h2" gutterBottom sx={{ fontFamily: "'Laginchy', serif" }}>
+      <Typography variant="h6" component="h2" gutterBottom>
         In Your Bag
       </Typography>
       {cartItemsList}
-      <Divider sx={{ my: 3 }} />
       {priceDetails}
     </Paper>
   );
