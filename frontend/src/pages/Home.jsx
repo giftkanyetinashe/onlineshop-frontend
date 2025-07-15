@@ -203,7 +203,7 @@ const Home = () => {
           src: item.type === 'video' ? item.src : item.media_file,
           type: item.type,
           alt: item.alt_text || 'NuaréSkyn Banner',
-          overlayText: item.overlay_text || 'Effortless Radiance, Inside and Out.',
+          overlayText: item.overlay_text || '.',
           ctaText: item.cta_text || 'Shop The Collection',
           ctaLink: item.cta_link || '/products',
           duration: item.duration || 7000 
