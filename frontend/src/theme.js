@@ -1,70 +1,65 @@
 import { createTheme } from '@mui/material/styles';
 
-// --- NuaréSkyn Refined Brand Tokens ---
+// --- THE NEW NUARÉSKYN BRAND PALETTE ---
 const paletteTokens = {
-  softTaupe: '#C3B5AB',
-  darkTaupe: '#A19288',
-  blush: '#EADAD4',
-  alabaster: '#F9F6F2',
-  mistyGrey: '#BDB4B0',
-  tutara: '#222220',
-  white: '#FFFFFF',
+  sandstone: '#7b6c64',   // Rich, muted brown. The main action color.
+  nomad: '#b3ac9e',       // Softer, greyer taupe. For borders and hover states.
+  swissCoffee: '#dfdbd8', // The NEW default background. Soft, dull, and warm.
+  tutara: '#222220',       // The primary text color. A soft, elegant black.
+  black: '#000000',       // Pure black for maximum contrast where needed (e.g., logo).
+  white: '#FFFFFF',       // For elements that need to pop, like modal backgrounds.
+  
+  // A custom soft red for errors that feels on-brand
+  softError: '#f5e8e8',
+  softErrorText: '#8b2c2c',
 };
 
-// --- Create and Export the Theme ---
+// --- Create and Export the New Theme ---
 const theme = createTheme({
-  // 1. Revised Color Palette
   palette: {
-    // Standard MUI keys
     primary: {
-      main: paletteTokens.softTaupe,
+      main: paletteTokens.sandstone, // Sandstone is the primary action color.
     },
     secondary: {
-      main: paletteTokens.tutara,
+      main: paletteTokens.tutara,   // Tutara is the secondary/dark accent.
     },
     background: {
-      default: paletteTokens.alabaster, // The creamish-white base
-      paper: paletteTokens.white,       // For cards and modals
+      default: paletteTokens.swissCoffee, // The whole site will have this soft, muted background.
+      paper: paletteTokens.white,         // Headers, cards, etc., will be white to sit on top.
     },
     text: {
-      primary: paletteTokens.tutara,    // Soft black for body copy
-      secondary: paletteTokens.softTaupe, // For less important text
+      primary: paletteTokens.tutara,      // Main text is soft black for readability.
+      secondary: paletteTokens.sandstone,   // Secondary text uses the primary color for cohesion.
     },
     error: {
-        main: '#8b2c2c', // Define a main error color for text
+      main: paletteTokens.softErrorText,
     },
-
-    // --- FIX APPLIED HERE ---
-    // Custom brand colors are now part of the theme's palette
-    mistyGrey: paletteTokens.mistyGrey,
-    blush: paletteTokens.blush,
-    darkTaupe: paletteTokens.darkTaupe,
-    // You can add the others if needed
+    
+    // Making custom colors available throughout the app
+    sandstone: paletteTokens.sandstone,
+    nomad: paletteTokens.nomad,
+    swissCoffee: paletteTokens.swissCoffee,
+    tutara: paletteTokens.tutara,
   },
 
-  // 2. Typography
   typography: {
     fontFamily: "'Circular Std', sans-serif",
-    h1: { fontFamily: "'Laginchy', serif", color: paletteTokens.tutara },
-    h2: { fontFamily: "'Laginchy', serif", color: paletteTokens.tutara },
-    h3: { fontFamily: "'Laginchy', serif", color: paletteTokens.tutara },
-    h4: { fontFamily: "'Laginchy', serif", color: paletteTokens.tutara },
-    h5: { fontFamily: "'Laginchy', serif", color: paletteTokens.tutara, fontWeight: 700 },
-    h6: { fontFamily: "'Laginchy', serif", color: paletteTokens.tutara },
+    // Headings now use pure black for a slight pop against the soft black body text.
+    h1: { fontFamily: "'Laginchy', serif", color: paletteTokens.black },
+    h2: { fontFamily: "'Laginchy', serif", color: paletteTokens.black },
+    h3: { fontFamily: "'Laginchy', serif", color: paletteTokens.black },
+    h4: { fontFamily: "'Laginchy', serif", color: paletteTokens.black },
+    h5: { fontFamily: "'Laginchy', serif", color: paletteTokens.black, fontWeight: 700 },
+    h6: { fontFamily: "'Laginchy', serif", color: paletteTokens.black },
     button: {
       textTransform: 'uppercase',
       fontWeight: 500,
       letterSpacing: '1px',
     },
-    subtitle1: {
-      fontSize: '1.1rem',
-      color: paletteTokens.mistyGrey,
-      fontWeight: 400,
-    }
   },
 
-  // 3. Component-Specific Overrides
   components: {
+    // Buttons now follow the Sandstone -> Nomad transition
     MuiButton: {
       styleOverrides: {
         root: {
@@ -76,14 +71,15 @@ const theme = createTheme({
           },
         },
         containedPrimary: {
-          backgroundColor: paletteTokens.softTaupe,
+          backgroundColor: paletteTokens.sandstone,
           color: paletteTokens.white,
           '&:hover': {
-            backgroundColor: paletteTokens.darkTaupe,
+            backgroundColor: paletteTokens.nomad,
           },
         },
       },
     },
+    // TextFields use the new muted borders
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
@@ -92,95 +88,58 @@ const theme = createTheme({
         root: {
           '.MuiOutlinedInput-root': {
             '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: paletteTokens.mistyGrey,
+              borderColor: paletteTokens.nomad, // Softer default border
             },
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: paletteTokens.softTaupe,
+              borderColor: paletteTokens.sandstone, // Hover border
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: paletteTokens.softTaupe,
+              borderColor: paletteTokens.sandstone,
               borderWidth: '1px',
             },
           },
           '.MuiInputLabel-root': {
-            color: paletteTokens.mistyGrey,
+            color: paletteTokens.nomad,
             '&.Mui-focused': {
-              color: paletteTokens.softTaupe,
+              color: paletteTokens.sandstone,
             },
           },
         },
       },
     },
-    MuiLink: {
-      styleOverrides: {
-        root: {
-          color: paletteTokens.softTaupe,
-          fontWeight: 500,
-          textDecoration: 'none',
-          '&:hover': {
-            textDecoration: 'underline',
-            color: paletteTokens.darkTaupe,
-          },
-        },
-      },
+    // The main app bar/header now uses a white background with a Nomad border
+    MuiAppBar: {
+        styleOverrides: {
+            root: {
+                backgroundColor: paletteTokens.white,
+                color: paletteTokens.tutara,
+                borderBottom: `1px solid ${paletteTokens.nomad}`
+            }
+        }
     },
-    MuiTableContainer: {
-      styleOverrides: {
-        root: {
-          boxShadow: 'none',
-          border: `1px solid ${paletteTokens.blush}`,
-          borderRadius: '8px',
-        },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        root: {
-          borderBottom: `1px solid ${paletteTokens.blush}`,
-          padding: '24px',
-        },
-        head: {
-          fontFamily: "'Circular Std', sans-serif",
-          fontWeight: 600,
-          color: paletteTokens.tutara,
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        },
-      },
-    },
-    MuiIconButton: {
-      styleOverrides: {
-        root: {
-          border: `1px solid ${paletteTokens.mistyGrey}`,
-          borderRadius: '4px',
-          width: '32px',
-          height: '32px',
-          '&:hover': {
-            backgroundColor: paletteTokens.blush,
-          },
-        },
-      },
-    },
-    MuiCheckbox: {
-      styleOverrides: {
-        root: {
-          color: paletteTokens.mistyGrey,
-          '&.Mui-checked': {
-            color: paletteTokens.softTaupe,
-          },
-        },
-      },
-    },
+    // Alerts use the new soft error colors
     MuiAlert: {
       styleOverrides: {
-        root: {
-          borderRadius: '4px',
-        },
+        root: { borderRadius: '4px' },
         standardError: {
-          backgroundColor: paletteTokens.blush,
-          color: '#8b2c2c',
+          backgroundColor: paletteTokens.softError,
+          color: paletteTokens.softErrorText,
         }
       }
+    },
+    // Other components updated to use the new palette
+    MuiDivider: {
+        styleOverrides: {
+            root: { borderColor: paletteTokens.nomad }
+        }
+    },
+    MuiChip: {
+        styleOverrides: {
+            root: {
+                // Ensure chips have the correct font
+                fontFamily: "'Circular Std', sans-serif",
+            }
+        }
     }
   },
 });

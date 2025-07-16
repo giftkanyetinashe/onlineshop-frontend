@@ -4,7 +4,7 @@ import {
   Box, Typography, Container, Grid, Stack, TextField, Button, 
   Link, IconButton, Divider, useTheme 
 } from '@mui/material';
-// Import social media icons
+import { alpha } from '@mui/material/styles';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import TwitterIcon from '@mui/icons-material/Twitter';
@@ -12,18 +12,17 @@ import TwitterIcon from '@mui/icons-material/Twitter';
 const Footer = () => {
   const theme = useTheme();
 
-  // Helper component for link stacks, styled for a LIGHT background
   const FooterLink = ({ to, children }) => (
     <Link 
       component={RouterLink} 
       to={to}
       variant="body2"
       sx={{ 
-        color: 'text.secondary', // Use the theme's secondary text color (softTaupe)
+        color: theme.palette.nomad, // Use Nomad for secondary links
         textDecoration: 'none',
         transition: 'color 0.2s ease-in-out',
         '&:hover': {
-          color: 'primary.main', // Hover to the primary brand color
+          color: theme.palette.background.paper, // Hover to White
         }
       }}
     >
@@ -36,11 +35,11 @@ const Footer = () => {
       component="footer" 
       sx={{
         // --- THE COLOR CHANGE ---
-        // Mirroring the header's style
-        bgcolor: 'background.paper', // Use white, same as the header
-        color: 'text.primary',       // Use dark text, same as the header
-        borderTop: `1px solid ${theme.palette.blush}`, // Use the soft blush border
+        bgcolor: 'primary.main', // Use Sandstone
+        color: 'background.paper', // Default text/icon color is White
         py: { xs: 5, md: 8 },
+        position: 'relative',
+        zIndex: 1200, // Higher than sidebar zIndex 1100 to appear on top
       }}
     >
       <Container maxWidth="lg">
@@ -49,29 +48,22 @@ const Footer = () => {
           <Grid item xs={12} md={4}>
             <Typography 
               variant="h5" 
-              sx={{ 
-                fontFamily: "'Laginchy', serif", 
-                fontWeight: 400, 
-                letterSpacing: '1px',
-              }}
+              sx={{ fontFamily: "'Laginchy', serif", fontWeight: 400, letterSpacing: '1px', color: 'inherit' }}
             >
               NuaréSkyn
             </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5, maxWidth: '300px' }}>
+            <Typography variant="body2" sx={{ color: theme.palette.nomad, mt: 1.5, maxWidth: '300px' }}>
               Tailored for you. Inspired by beauty.
             </Typography>
             <Stack direction="row" spacing={1} mt={2}>
-              {/* Icons now inherit the dark text color and hover to primary */}
-              <IconButton aria-label="facebook" color="inherit" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}><FacebookIcon /></IconButton>
-              <IconButton aria-label="instagram" color="inherit" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}><InstagramIcon /></IconButton>
-              <IconButton aria-label="twitter" color="inherit" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}><TwitterIcon /></IconButton>
+              <IconButton aria-label="facebook" sx={{ color: theme.palette.nomad, '&:hover': { color: 'background.paper' } }}><FacebookIcon /></IconButton>
+              <IconButton aria-label="instagram" sx={{ color: theme.palette.nomad, '&:hover': { color: 'background.paper' } }}><InstagramIcon /></IconButton>
+              <IconButton aria-label="twitter" sx={{ color: theme.palette.nomad, '&:hover': { color: 'background.paper' } }}><TwitterIcon /></IconButton>
             </Stack>
           </Grid>
 
           <Grid item xs={6} md={2}>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Shop
-            </Typography>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Shop</Typography>
             <Stack spacing={1.5}>
               <FooterLink to="/products">All Products</FooterLink>
               <FooterLink to="/collections/best-sellers">Best Sellers</FooterLink>
@@ -80,9 +72,7 @@ const Footer = () => {
           </Grid>
 
           <Grid item xs={6} md={2}>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Support
-            </Typography>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Support</Typography>
             <Stack spacing={1.5}>
               <FooterLink to="/contact">Contact Us</FooterLink>
               <FooterLink to="/faq">FAQ</FooterLink>
@@ -91,31 +81,28 @@ const Footer = () => {
           </Grid>
           
           <Grid item xs={12} md={4}>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Join The Club
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Join The Club</Typography>
+            <Typography variant="body2" sx={{ color: theme.palette.nomad, mb: 2 }}>
               Get 10% off your first order and exclusive access to new products.
             </Typography>
             <Stack direction="row" spacing={-0.5}>
               <TextField 
-                variant="outlined"
-                size="small"
-                placeholder="Your email address"
+                variant="outlined" size="small" placeholder="Your email address"
                 sx={{ 
-                  flexGrow: 1, 
-                  // Let the global theme styles handle the TextField look
-                  '& .MuiOutlinedInput-root': { 
-                    borderTopRightRadius: 0, 
-                    borderBottomRightRadius: 0 
-                  } 
+                  flexGrow: 1, bgcolor: alpha(theme.palette.common.black, 0.1),
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: theme.palette.nomad },
+                    '&:hover fieldset': { borderColor: theme.palette.background.paper },
+                    borderTopRightRadius: 0, borderBottomRightRadius: 0,
+                  },
+                  '& .MuiInputBase-input': { color: 'inherit' }
                 }}
               />
               <Button 
                 variant="contained" 
-                color="primary"
+                color="secondary" // Use Tutara (soft black) for the button
                 disableElevation
-                sx={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, px: 3 }}
+                sx={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, px: 3, '&:hover': { bgcolor: alpha(theme.palette.secondary.main, 0.8) } }}
               >
                 Subscribe
               </Button>
@@ -124,17 +111,16 @@ const Footer = () => {
 
         </Grid>
         
-        <Divider sx={{ my: 4, borderColor: theme.palette.blush }} />
+        <Divider sx={{ my: 4, borderColor: alpha(theme.palette.common.white, 0.15) }} />
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: theme.palette.nomad }}>
             © {new Date().getFullYear()} NuaréSkyn. All rights reserved.
           </Typography>
           <Stack direction="row" spacing={3}>
             <FooterLink to="/terms-of-service">Terms of Service</FooterLink>
             <FooterLink to="/privacy-policy">Privacy Policy</FooterLink>
-          </Stack>
+          </Stack>                    
         </Box>
-
       </Container>
     </Box>
   );
