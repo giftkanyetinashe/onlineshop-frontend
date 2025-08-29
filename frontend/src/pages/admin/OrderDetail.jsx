@@ -1,130 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+// src/pages/admin/AdminOrderDetail.jsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
+import {
+  Card, Typography, Row, Col, Select, message, Tag, Space,
+  Button, Spin, Alert, Descriptions, Divider, Avatar
+} from 'antd';
+import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, CloseCircleOutlined, TruckOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 
-const statusLabels = {
-  P: 'Pending',
-  PR: 'Processing',
-  S: 'Shipped',
-  D: 'Delivered',
-  C: 'Cancelled',
-};
+const { Title, Text } = Typography;
+const { Option } = Select;
 
-const OrderDetail = () => {
+const statusOptions = [
+    { value: 'P', label: 'Pending', icon: <ClockCircleOutlined />, color: 'blue' },
+    { value: 'OH', label: 'On Hold', icon: <SyncOutlined spin />, color: 'orange' },
+    { value: 'PR', label: 'Processing', icon: <SyncOutlined />, color: 'purple' },
+    { value: 'S', label: 'Shipped', icon: <TruckOutlined />, color: 'cyan' },
+    { value: 'D', label: 'Delivered', icon: <CheckCircleOutlined />, color: 'green' },
+    { value: 'C', label: 'Cancelled', icon: <CloseCircleOutlined />, color: 'red' },
+];
+
+const AdminOrderDetail = () => {
   const { orderId } = useParams();
-  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Utility function to safely convert price to number
-  const toNumber = (value) => {
-    const num = typeof value === 'number' ? value : parseFloat(value);
-    return isNaN(num) ? 0 : num;
-  };
-
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await api.get('/orders/orders/' + orderId + '/');
-        setOrder(response.data);
-      } catch (error) {
-        console.error('Error fetching order details:', error);
-        setError('Failed to load order details.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrder();
+  const fetchOrder = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/orders/orders/${orderId}/`);
+      setOrder(response.data);
+    } catch (error) { message.error('Failed to fetch order details'); }
+    finally { setLoading(false); }
   }, [orderId]);
 
-  if (loading) {
-    return <Typography>Loading order details...</Typography>;
-  }
+  useEffect(() => { fetchOrder(); }, [fetchOrder]);
+  
+  const handleStatusChange = async (newStatus) => {
+    try {
+        const response = await api.patch(`/orders/orders/${orderId}/`, { status: newStatus });
+        setOrder(response.data);
+        message.success('Order status updated!');
+    } catch {
+        message.error('Failed to update status');
+    }
+  };
 
-  if (error) {
-    return <Typography color="error">{error}</Typography>;
-  }
+  if (loading) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
+  if (!order) return <Alert message="Order not found." type="error" showIcon />;
 
-  if (!order) {
-    return <Typography>Order not found.</Typography>;
-  }
+  //const statusInfo = statusOptions.find(s => s.value === order.status);
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Button variant="outlined" onClick={() => navigate('/admin/orders')} sx={{ mb: 2 }}>
-        Back to Orders
-      </Button>
-      <Typography variant="h4" gutterBottom>
-        Order #{order.order_number}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Customer: {order.user?.username || 'N/A'}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Date: {new Date(order.created_at).toLocaleString()}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Status: {statusLabels[order.status] || order.status}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Payment Status: {order.payment_status ? 'Paid' : 'Unpaid'}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Shipping Address: {order.shipping_address || 'N/A'}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Billing Address: {order.billing_address || 'N/A'}
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Payment Method: {order.payment_method || 'N/A'}
-      </Typography>
-      <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-        Items
-      </Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Product</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Total</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {order.items && order.items.length > 0 ? (
-              order.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    {item.product?.name || 'N/A'} -{' '}
-                    {item.variant?.color || ''} {item.variant?.size || ''} {item.variant?.sku || ''}
-                  </TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>
-                    ${toNumber(item.price).toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    ${(toNumber(item.price) * item.quantity).toFixed(2)}
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4}>No items found.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-        Total Price: ${toNumber(order.total_price).toFixed(2)}
-      </Typography>
-    </Container>
+    <div style={{ padding: 24 }}>
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space>
+            <Link to="/admin/orders"><Button icon={<ArrowLeftOutlined />} /></Link>
+            <div>
+                <Title level={4} style={{ margin: 0 }}>Order {order.order_number}</Title>
+                <Text type="secondary">Placed on {dayjs(order.created_at).format('MMMM D, YYYY h:mm A')}</Text>
+            </div>
+          </Space>
+        </Col>
+        <Col>
+          <Space>
+            <Text>Status:</Text>
+            <Select value={order.status} onChange={handleStatusChange} style={{ width: 150 }}>
+              {statusOptions.map(opt => <Option key={opt.value} value={opt.value}>{opt.label}</Option>)}
+            </Select>
+          </Space>
+        </Col>
+      </Row>
+
+      <Row gutter={24}>
+        <Col xs={24} lg={16}>
+          <Card title="Order Items" style={{ marginBottom: 24 }}>
+            <Space direction="vertical" style={{ width: '100%' }} split={<Divider/>}>
+                {order.items.map(item => (
+                    <Row key={item.id} align="middle" gutter={16}>
+                        <Col span={4}><Avatar shape="square" size={64} src={item.variant?.variant_image || item.variant?.product?.images?.[0]?.image} /></Col>
+                        <Col span={12}>
+                            <Text strong>{item.variant?.product?.name || 'Product Name Unavailable'}</Text><br/>
+                            <Text type="secondary">{item.variant?.shade_name || ''} - {item.variant?.size || ''}</Text>
+                        </Col>
+                        <Col span={4} style={{ textAlign: 'right' }}><Text type="secondary">{item.quantity} x ${item.price}</Text></Col>
+                        <Col span={4} style={{ textAlign: 'right' }}><Text strong>${(item.quantity * item.price).toFixed(2)}</Text></Col>
+                    </Row>
+                ))}
+            </Space>
+            <Divider/>
+            <Descriptions column={1} layout="horizontal" styles={{ content: { textAlign: 'right' } }}>
+                <Descriptions.Item label="Subtotal">${(Number(order.total_price || 0) - Number(order.shipping_cost || 0) + Number(order.discount_amount || 0)).toFixed(2)}</Descriptions.Item>
+                {order.discount_amount > 0 && <Descriptions.Item label={`Discount (${order.promo_code})`}>-${Number(order.discount_amount || 0).toFixed(2)}</Descriptions.Item>}
+                <Descriptions.Item label="Shipping">${Number(order.shipping_cost || 0).toFixed(2)}</Descriptions.Item>
+                <Descriptions.Item label={<Text strong>Total</Text>}><Text strong>${Number(order.total_price || 0).toFixed(2)}</Text></Descriptions.Item>
+            </Descriptions>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Customer Details" style={{ marginBottom: 24 }}>
+            <Space>
+                <Avatar size="large">{order.user.first_name?.[0]}{order.user.last_name?.[0]}</Avatar>
+                <div>
+                    <Text strong>{order.user.first_name} {order.user.last_name}</Text><br/>
+                    <Text type="secondary">{order.user.email}</Text>
+                </div>
+            </Space>
+            <Divider/>
+            <Descriptions column={1}>
+                <Descriptions.Item label="Shipping Address">{order.shipping_address}</Descriptions.Item>
+                <Descriptions.Item label="Billing Address">{order.billing_address}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+          <Card title="Payment Information">
+            <Tag color={order.payment_status ? 'green' : 'red'}>{order.payment_status ? 'Paid' : 'Unpaid'}</Tag>
+            <Text style={{ marginLeft: 8 }}>via {order.payment_method}</Text>
+          </Card>
+        </Col>
+      </Row>
+    </div>
   );
 };
 
-export default OrderDetail;
+export default AdminOrderDetail;

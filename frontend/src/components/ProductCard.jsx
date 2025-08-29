@@ -1,187 +1,199 @@
+// src/components/ProductCard.jsx
+
 import React from 'react';
 import {
   Card,
   CardMedia,
   CardContent,
   Typography,
-  Button,
-  CardActions,
   Box,
   Chip,
-  IconButton
+  IconButton,
+  Rating,
+  useTheme,
+  Stack
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { FavoriteBorder, Favorite, ShoppingCart } from '@mui/icons-material';
+import { ShoppingCart, CheckCircle } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 
 const ProductCard = ({ product }) => {
   const { addToCart, cart } = useCart();
-  const [isFavorite, setIsFavorite] = React.useState(false);
   const navigate = useNavigate();
+  const theme = useTheme();
 
-  const firstVariant = product.variants?.[0];
+  // --- World-Class Logic Upgrade ---
+  // A product card should always represent the *default* or first available state.
+  const defaultVariant = product.variants?.find(v => v.stock > 0) || product.variants?.[0];
 
-  const isInCart = cart.some(item =>
-    item.product.slug === product.slug &&
-    item.variant.id === firstVariant?.id
-  );
+  const isInCart = cart.some(item => item.variant?.id === defaultVariant?.id);
+  const isOutOfStock = !defaultVariant || defaultVariant.stock === 0;
 
-  const handleAddToCart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (product.variants && product.variants.length > 0) {
-      addToCart(product, product.variants[0], 1);
-    }
-  };
+  // Use the variant's price if it exists, otherwise fall back to the product's display price
+  const price = defaultVariant?.price || product.display_price;
+  const discountPrice = defaultVariant?.discount_price;
+  const hasDiscount = discountPrice && parseFloat(discountPrice) < parseFloat(price);
 
-  const toggleFavorite = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-  };
+  // Calculate average rating
+  const averageRating = product.reviews?.length
+    ? product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length
+    : 0;
 
   const handleCardClick = () => {
     navigate(`/products/${product.slug}`);
   };
 
-  const defaultImage = product.images?.find(img => img.is_default) || product.images?.[0];
-  const displayImage = firstVariant?.variant_image || defaultImage?.image;
-  const hasDiscount = product.discount_price && product.discount_price < product.price;
+  const handleActionClick = (e) => {
+    e.stopPropagation(); // Prevent card click when clicking the button
+    if (isInCart) {
+      navigate('/cart');
+    } else if (!isOutOfStock) {
+      addToCart(product, defaultVariant, 1);
+    }
+  };
+
+  // Determine the primary image to display
+  const displayImage = product.images?.find(img => img.is_default)?.image || product.images?.[0]?.image;
 
   return (
     <Card
       onClick={handleCardClick}
+      component={motion.div}
+      whileHover="hover"
       sx={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         cursor: 'pointer',
-        transition: 'transform 0.3s',
+        borderRadius: 3,
+        boxShadow: 'none',
+        border: `1px solid ${theme.palette.divider}`,
+        transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
         '&:hover': {
-          transform: 'translateY(-5px)',
-          boxShadow: 3
-        }
+          boxShadow: theme.shadows[4],
+          borderColor: 'transparent'
+        },
       }}
     >
-      {/* Favorite button */}
-      <IconButton
-        sx={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          zIndex: 1,
-          color: isFavorite ? 'red' : 'grey.500',
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.9)'
-          }
-        }}
-        onClick={toggleFavorite}
-        aria-label="add to favorites"
-      >
-        {isFavorite ? <Favorite /> : <FavoriteBorder />}
-      </IconButton>
-
-      {/* Discount badge */}
-      {hasDiscount && (
-        <Chip
-          label={`${Math.round((1 - product.discount_price / product.price) * 100)}% OFF`}
-          color="error"
-          size="small"
+      <Box sx={{ position: 'relative', overflow: 'hidden', pt: '100%' /* 1:1 Aspect Ratio */ }}>
+        <CardMedia
+          //component={motion.img}
+          image={displayImage}
+          //alt={product.name}
           sx={{
             position: 'absolute',
-            top: 8,
-            left: 8,
-            zIndex: 1
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            transition: 'transform 0.4s ease',
+          }}
+          variants={{
+            hover: { scale: 1.05 }
           }}
         />
-      )}
 
-      {/* Product or Variant image */}
-      <CardMedia
-        component="img"
-        height="200"
-        image={displayImage}
-        alt={product.name}
-        sx={{
-          objectFit: 'contain',
-          p: 1,
-          backgroundColor: '#f5f5f5'
-        }}
-      />
-
-      {/* Product details */}
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Typography gutterBottom variant="h6" component="h2" noWrap>
-          {product.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" noWrap>
-          {product.category?.name}
-        </Typography>
-
-        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 'bold',
-              color: hasDiscount ? 'error.main' : 'text.primary'
-            }}
-          >
-            ${hasDiscount ? product.discount_price : product.price}
-          </Typography>
-
+        {/* --- Badges --- */}
+        <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
           {hasDiscount && (
-            <Typography
-              variant="body2"
-              sx={{
-                textDecoration: 'line-through',
-                color: 'text.secondary',
-                ml: 1
-              }}
-            >
-              ${product.price}
-            </Typography>
+            <Chip
+              label={`${Math.round((1 - discountPrice / price) * 100)}% OFF`}
+              color="error"
+              size="small"
+              sx={{ fontWeight: 'bold' }}
+            />
+          )}
+          {isOutOfStock && (
+             <Chip label="Sold Out" color="default" size="small" />
           )}
         </Box>
 
-        {product.variants?.length === 0 && (
-          <Typography variant="caption" color="error">
-            Out of stock
-          </Typography>
-        )}
-      </CardContent>
-
-      {/* Action buttons */}
-      <CardActions sx={{ justifyContent: 'space-between' }}>
-        <Button
-          size="small"
-          color="primary"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigate(`/products/${product.slug}`);
+        {/* --- Hover Action Button --- */}
+        <Box
+          component={motion.div}
+          initial={{ y: 20, opacity: 0 }}
+          variants={{
+            hover: { y: 0, opacity: 1 }
           }}
-        >
-          View Details
-        </Button>
-
-        <Button
-          size="small"
-          color="secondary"
-          startIcon={<ShoppingCart />}
-          onClick={handleAddToCart}
-          disabled={!product.variants || product.variants.length === 0 || isInCart}
+          transition={{ duration: 0.3 }}
           sx={{
-            '&.Mui-disabled': {
-              backgroundColor: 'success.light',
-              color: 'white'
-            }
+            position: 'absolute',
+            bottom: 12,
+            right: 12,
+            zIndex: 2,
           }}
         >
-          {isInCart ? 'Added' : 'Add to Cart'}
-        </Button>
-      </CardActions>
+          <IconButton
+            onClick={handleActionClick}
+            disabled={isOutOfStock && !isInCart}
+            sx={{
+              bgcolor: isInCart ? 'success.main' : 'primary.main',
+              color: 'white',
+              '&:hover': {
+                bgcolor: isInCart ? 'success.dark' : 'primary.dark',
+              },
+              '&.Mui-disabled': {
+                  bgcolor: 'grey.300'
+              }
+            }}
+          >
+            {isInCart ? <CheckCircle /> : <ShoppingCart />}
+          </IconButton>
+        </Box>
+      </Box>
+
+      {/* --- Product Details --- */}
+      <CardContent sx={{ flexGrow: 1, p: 2 }}>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {product.brand}
+        </Typography>
+        <Typography 
+            variant="h6" 
+            component="h2" 
+            sx={{ 
+                fontWeight: 600, 
+                fontSize: '1rem',
+                // Truncate text to 2 lines
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-Box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                minHeight: '2.5rem' // Reserve space for 2 lines
+            }}
+        >
+          {product.name}
+        </Typography>
+
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
+          <Rating value={averageRating} precision={0.5} readOnly size="small" />
+          {product.reviews?.length > 0 && (
+            <Typography variant="caption" color="text.secondary">
+                ({product.reviews.length})
+            </Typography>
+          )}
+        </Stack>
+        
+        <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+          {hasDiscount ? (
+            <>
+              <Typography variant="h6" fontWeight="bold" color="error.main">
+                ${discountPrice}
+              </Typography>
+              <Typography variant="body1" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
+                ${price}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="h6" fontWeight="bold">
+              ${price}
+            </Typography>
+          )}
+        </Box>
+      </CardContent>
     </Card>
   );
 };

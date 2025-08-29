@@ -1,215 +1,209 @@
-import React from 'react';
+// src/pages/CartPage.jsx
+
+import React, { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+//
 
-// Import all necessary components and hooks
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Button,
-  IconButton,
-  Grid,
-  Stack,
-  Paper, // Used for mobile cards
-  useTheme, // To access theme breakpoints
-  useMediaQuery // To detect screen size
+// Import necessary MUI components and hooks
+import {
+  Container, Typography, Box, Button, IconButton, Grid, Stack, Paper,
+  useTheme, useMediaQuery, TextField, CircularProgress, Divider,
 } from '@mui/material';
+
+// Import icons
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 
-// The EmptyCart component remains the same and is already responsive.
-const EmptyCart = () => (
-  <Container maxWidth="sm">
-    <Box my={8} textAlign="center" display="flex" flexDirection="column" alignItems="center" gap={2}>
-      <ShoppingBagOutlinedIcon sx={{ fontSize: '4rem', color: 'text.secondary' }} />
-      <Typography variant="h5" component="h1" sx={{ fontFamily: "'Laginchy', serif" }}>
-        Your Bag is Empty
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 2 }}>
-        Looks like you haven't added anything to your bag yet.
-      </Typography>
-      <Button 
-        variant="contained" 
-        color="primary" 
-        component={RouterLink} 
-        to="/"
-        size="large"
-      >
-        Continue Shopping
-      </Button>
-    </Box>
-  </Container>
+// --- CartItem and ImagePlaceholder components remain the same ---
+// (No changes needed in the first half of the file)
+
+const ImagePlaceholder = () => (
+  <Box sx={{ width: 80, height: 80, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'grey.200', color: 'grey.500' }}>
+    <BrokenImageIcon />
+  </Box>
 );
 
-const CartPage = () => {
-  const { cart, removeFromCart, updateQuantity } = useCart();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // TRUE on screens smaller than medium (tablet/mobile)
+const CartItem = ({ item, isMobile, onRemove }) => {
+  const { updateQuantity } = useCart();
+  const variant = item.variant;
+  const product = item.product || variant?.product;
+  const [displayQuantity, setDisplayQuantity] = useState(item.quantity);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const price = Number(variant?.price) || 0;
+  const discountPrice = Number(variant?.discount_price) || 0;
+  const hasDiscount = discountPrice > 0 && discountPrice < price;
+  const finalPrice = hasDiscount ? discountPrice : price;
+  const stock = variant?.stock ?? Infinity;
+  const imageUrl = variant?.variant_image || product?.images?.[0]?.image;
 
-  const handleQuantityChange = (productId, variantId, newQuantity) => {
-    if (newQuantity > 0) {
-      updateQuantity(productId, variantId, newQuantity);
-    }
-  };
+  // --- THIS IS THE FIX ---
+  // The 'stock' variable has been added to the dependency array.
+  useEffect(() => {
+    if (displayQuantity === item.quantity) { setIsUpdating(false); return; }
+    setIsUpdating(true);
+    const handler = setTimeout(() => {
+      const newQuantity = Math.max(1, Math.min(displayQuantity, stock));
+      updateQuantity(product?.id, variant?.id, newQuantity);
+    }, 750);
+    return () => clearTimeout(handler);
+  }, [displayQuantity, item.quantity, product?.id, variant?.id, updateQuantity, stock]);
 
-  const getPrice = (item) => Number(item?.variant?.price) || Number(item?.product?.discount_price) || Number(item?.product?.price) || 0;
-  const formatPrice = (price) => `$${Number(price).toFixed(2)}`;
+  if (!product || !variant) return null;
   
-  const cartTotal = cart.reduce((total, item) => total + getPrice(item) * item.quantity, 0);
+  const handleQuantityInputChange = (e) => { setDisplayQuantity(e.target.value === '' ? 1 : parseInt(e.target.value, 10) || 1); };
 
-  if (cart.length === 0) {
-    return <EmptyCart />;
+  const QuantityChanger = () => (
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <IconButton size="small" onClick={() => setDisplayQuantity(q => Math.max(1, q - 1))} disabled={isUpdating}><RemoveIcon fontSize="small" /></IconButton>
+      {isUpdating ? <CircularProgress size={20} /> : <TextField value={displayQuantity} onChange={handleQuantityInputChange} size="small" sx={{ width: '60px', '& .MuiInputBase-input': { textAlign: 'center' } }} inputProps={{ type: 'number', min: 1, max: stock }} />}
+      <IconButton size="small" onClick={() => setDisplayQuantity(q => Math.min(q + 1, stock))} disabled={isUpdating}><AddIcon fontSize="small" /></IconButton>
+    </Stack>
+  );
+
+  const itemSubtotal = finalPrice * displayQuantity;
+  
+  const ProductInfo = () => (
+    <Stack direction="row" spacing={2} alignItems="center" flexGrow={1}>
+      {imageUrl ? <Box component="img" src={imageUrl} alt={product.name} sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover' }} /> : <ImagePlaceholder />}
+      <Box>
+        <Typography variant="body1" fontWeight={500}>{product.name}</Typography>
+        <Typography variant="body2" color="text.secondary">{variant.shade_name ? `${variant.shade_name} - ${variant.size}` : variant.size}</Typography>
+        {hasDiscount ? (
+          <Stack direction="row" spacing={1} alignItems="center"><Typography variant="body2" fontWeight={500} color="error.main">${finalPrice.toFixed(2)}</Typography><Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>${price.toFixed(2)}</Typography></Stack>
+        ) : (<Typography variant="body2" fontWeight={500}>${finalPrice.toFixed(2)}</Typography>)}
+        {displayQuantity > stock && <Typography variant="caption" color="error">Only {stock} in stock</Typography>}
+      </Box>
+    </Stack>
+  );
+
+  if (isMobile) {
+    return (
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
+        <Stack direction="row" justifyContent="space-between"><ProductInfo /><IconButton onClick={() => onRemove(product.id, variant.id)} size="small" sx={{ alignSelf: 'flex-start' }}><DeleteOutlineIcon fontSize="small" /></IconButton></Stack>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}><QuantityChanger /><Typography variant="h6">${itemSubtotal.toFixed(2)}</Typography></Stack>
+      </Paper>
+    );
   }
 
-  // --- Reusable JSX for shared components ---
-  const orderSummary = (
-    <Box 
-      p={{ xs: 2, sm: 3 }} // Responsive padding
-      sx={{ 
-        backgroundColor: 'background.paper',
-        borderRadius: '8px', 
-        border: `1px solid ${theme.palette.mode === 'light' ? '#EADAD4' : 'divider'}` // blush border
-      }}
-    >
-      <Typography variant="h6" gutterBottom sx={{ fontFamily: "'Laginchy', serif" }}>
-        Order Summary
-      </Typography>
-      <Stack spacing={2} my={3}>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography>Subtotal</Typography>
-          <Typography>{formatPrice(cartTotal)}</Typography>
-        </Stack>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography>Shipping</Typography>
-          <Typography>Calculated at next step</Typography>
-        </Stack>
-      </Stack>
-      <Stack direction="row" justifyContent="space-between" mb={3}>
-        <Typography variant="h6">Estimated Total</Typography>
-        <Typography variant="h6">{formatPrice(cartTotal)}</Typography>
-      </Stack>
-      <Button 
-        variant="contained" 
-        color="primary" 
-        fullWidth
-        size="large"
-        component={RouterLink}
-        to="/checkout"
-        disabled={cart.length === 0}
-      >
-        Proceed to Checkout
-      </Button>
-    </Box>
+  return (
+    <Stack direction="row" spacing={2} alignItems="center">
+      <ProductInfo /><QuantityChanger /><Typography variant="body1" fontWeight={500} sx={{ width: '100px', textAlign: 'right' }}>${itemSubtotal.toFixed(2)}</Typography><IconButton onClick={() => onRemove(product.id, variant.id)} size="small"><DeleteOutlineIcon fontSize="small"/></IconButton>
+    </Stack>
   );
+};
+
+
+// --- Main CartPage Component ---
+const CartPage = () => {
+  const {
+    cart,
+    removeFromCart,
+    clearCart,
+    originalSubtotal,
+    totalProductSavings,
+    promoDiscount,
+    finalTotal,
+    promoCode,
+    setPromoCode,
+    appliedPromo,
+    promoError,
+    isPromoLoading,
+    handleApplyPromo,
+    removePromo,
+  } = useCart();
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const validCartItems = cart.filter(item => item.product && item.variant);
+  
+  if (validCartItems.length === 0) {
+    return (
+      <Container maxWidth="sm">
+        <Box my={8} textAlign="center" display="flex" flexDirection="column" alignItems="center" gap={2}>
+          <ShoppingBagOutlinedIcon sx={{ fontSize: '4rem', color: 'text.secondary' }} />
+          <Typography variant="h5" component="h1" sx={{ fontFamily: "'Laginchy', serif" }}>Your Bag is Empty</Typography>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>Ready to find your new favorite?</Typography>
+          <Button variant="contained" color="primary" component={RouterLink} to="/products" size="large">Continue Shopping</Button>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ my: { xs: 3, md: 6 } }}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ fontFamily: "'Laginchy', serif", textAlign: 'center', mb: { xs: 3, md: 5 } }}>
-        Your Bag
-      </Typography>
+      <Typography variant="h4" component="h1" gutterBottom sx={{ fontFamily: "'Laginchy', serif", textAlign: 'center', mb: { xs: 3, md: 5 } }}>Your Bag</Typography>
       
       <Grid container spacing={{ xs: 3, md: 5 }}>
-        {/* --- MAIN CONTENT: Conditional rendering based on screen size --- */}
         <Grid item xs={12} md={8}>
-          {isMobile ? (
-            // ===================================
-            // MOBILE VIEW: Card-based layout
-            // ===================================
-            <Stack spacing={3}>
-              {cart.map((item) => (
-                <Paper key={`${item.product.id}-${item.variant.id}`} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                  <Stack direction="row" spacing={2}>
-                    <Box
-                      component="img"
-                      src={item.product.images?.[0]?.image} 
-                      alt={item.product.name}
-                      sx={{ width: 80, height: 80, borderRadius: '4px', objectFit: 'cover' }}
-                    />
-                    <Box flexGrow={1}>
-                      <Typography variant="body1" fontWeight={500}>{item.product.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">{item.variant.name || item.variant.size}</Typography>
-                      <Typography variant="body2" fontWeight={500}>{formatPrice(getPrice(item))}</Typography>
-                    </Box>
-                    <IconButton onClick={() => removeFromCart(item.product.id, item.variant.id)} size="small" sx={{ alignSelf: 'flex-start' }}>
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity - 1)}>
-                        <RemoveIcon fontSize="small" />
-                      </IconButton>
-                      <Typography variant="body1" sx={{ px: 1, minWidth: '20px', textAlign: 'center' }}>{item.quantity}</Typography>
-                      <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity + 1)}>
-                        <AddIcon fontSize="small" />
-                      </IconButton>
-                    </Stack>
-                    <Typography variant="h6">{formatPrice(getPrice(item) * item.quantity)}</Typography>
-                  </Stack>
-                </Paper>
-              ))}
-            </Stack>
-          ) : (
-            // ===================================
-            // DESKTOP VIEW: Table-based layout
-            // ===================================
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Product</TableCell>
-                    <TableCell align="center">Quantity</TableCell>
-                    <TableCell align="right">Total</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {cart.map((item) => (
-                    <TableRow key={`${item.product.id}-${item.variant.id}`}>
-                      <TableCell>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          <Box component="img" src={item.product.images?.[0]?.image} alt={item.product.name} sx={{ width: 80, height: 80, borderRadius: '4px', objectFit: 'cover' }} />
-                          <Box>
-                            <Typography variant="body1" fontWeight={500}>{item.product.name}</Typography>
-                            <Typography variant="body2" color="text.secondary">{item.variant.name || item.variant.size}</Typography>
-                            <Typography variant="body2" color="text.secondary">{formatPrice(getPrice(item))}</Typography>
-                            <IconButton onClick={() => removeFromCart(item.product.id, item.variant.id)} size="small" sx={{ border: 'none', mt: 1, p: 0, '&:hover': { color: 'primary.main', backgroundColor: 'transparent'} }}>
-                              <DeleteOutlineIcon fontSize="small"/>
-                            </IconButton>
-                          </Box>
-                        </Stack>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-                          <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity - 1)}><RemoveIcon fontSize="small" /></IconButton>
-                          <Typography variant="body1" sx={{ px: 1, minWidth: '20px', textAlign: 'center' }}>{item.quantity}</Typography>
-                          <IconButton size="small" onClick={() => handleQuantityChange(item.product.id, item.variant.id, item.quantity + 1)}><AddIcon fontSize="small" /></IconButton>
-                        </Stack>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body1" fontWeight={500}>{formatPrice(getPrice(item) * item.quantity)}</Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+          <Stack spacing={3} divider={<Divider />}>
+            {validCartItems.map((item) => <CartItem key={`${item.product?.id}-${item.variant.id}`} item={item} isMobile={isMobile} onRemove={removeFromCart} />)}
+          </Stack>
         </Grid>
         
-        {/* --- ORDER SUMMARY: This grid layout handles responsiveness automatically --- */}
         <Grid item xs={12} md={4}>
-          {orderSummary}
+          <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, position: 'sticky', top: 100 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontFamily: "'Laginchy', serif" }}>Order Summary</Typography>
+            
+            <Stack spacing={1} my={3}>
+              <Stack direction="row" justifyContent="space-between">
+                <Typography color="text.secondary">Subtotal</Typography>
+                <Typography sx={{ textDecoration: totalProductSavings > 0 ? 'line-through' : 'none' }}>
+                    ${originalSubtotal.toFixed(2)}
+                </Typography>
+              </Stack>
+
+              {totalProductSavings > 0 && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="success.main">Product Savings</Typography>
+                  <Typography color="success.main">- ${totalProductSavings.toFixed(2)}</Typography>
+                </Stack>
+              )}
+              
+              {promoDiscount > 0 && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="success.main">Promo Code ({appliedPromo.code})</Typography>
+                  <Typography color="success.main">-${promoDiscount.toFixed(2)}</Typography>
+                </Stack>
+              )}
+              
+              <Stack direction="row" justifyContent="space-between"><Typography color="text.secondary">Shipping</Typography><Typography>Calculated at next step</Typography></Stack>
+            </Stack>
+            
+            {appliedPromo ? (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'success.light', p: 1, borderRadius: 1, mb: 2 }}>
+                    <Typography variant="body2" color="success.dark" fontWeight="bold">Code "{appliedPromo.code}" applied!</Typography>
+                    <Button size="small" onClick={removePromo}>Remove</Button>
+                </Box>
+            ) : (
+                <Stack direction="row" spacing={1} mb={2}>
+                  <TextField size="small" placeholder="Promo Code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} fullWidth error={!!promoError} helperText={promoError} />
+                  <Button variant="outlined" onClick={handleApplyPromo} disabled={!promoCode || isPromoLoading}>
+                    {isPromoLoading ? <CircularProgress size={24} /> : 'Apply'}
+                  </Button>
+                </Stack>
+            )}
+
+            <Divider sx={{ my: 2 }} />
+            
+            <Stack direction="row" justifyContent="space-between" mb={3}>
+              <Typography variant="h6">Estimated Total</Typography>
+              <Typography variant="h6">${finalTotal.toFixed(2)}</Typography>
+            </Stack>
+
+            <Button variant="contained" color="primary" fullWidth size="large" component={RouterLink} to="/checkout">Proceed to Checkout</Button>
+          </Paper>
         </Grid>
       </Grid>
+      
+      <Stack direction="row" justifyContent="space-between" sx={{ mt: 4 }}>
+        <Button component={RouterLink} to="/products" color="inherit">Continue Shopping</Button>
+        <Button onClick={clearCart} color="inherit" size="small">Clear Cart</Button>
+      </Stack>
     </Container>
   );
 };

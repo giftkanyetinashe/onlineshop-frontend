@@ -31,7 +31,7 @@ const HeroBanner = ({ title, subtitle, ctaText, ctaLink, image }) => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
           zIndex: 1
         }}
       />
@@ -54,7 +54,7 @@ const HeroBanner = ({ title, subtitle, ctaText, ctaLink, image }) => {
           gutterBottom
           sx={{
             fontWeight: 700,
-            textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+            textShadow: '2px 2px 4px rgba(255, 255, 255, 0.5)',
             mb: 1
           }}
         >

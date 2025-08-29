@@ -1,46 +1,49 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL + '/api/',
+  baseURL: 'http://localhost:8000/api/',
   headers: {
-    'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
-// ✅ Attach access token to every request
+// Add a request interceptor to include the token if available
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
+    }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// ✅ Handle token refresh on 401 errors
+// Add a response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    
+    if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
+      
       try {
         const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post(
-          `${process.env.REACT_APP_API_URL}/api/auth/token/refresh/`,
-          { refresh: refreshToken },
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-
+        const response = await axios.post('http://localhost:8000/api/auth/token/refresh/', {
+          refresh: refreshToken,
+        });
+        
         const { access } = response.data;
         localStorage.setItem('access_token', access);
         api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
         originalRequest.headers['Authorization'] = `Bearer ${access}`;
-
+        
         return api(originalRequest);
       } catch (refreshError) {
         console.error('Refresh token failed:', refreshError);
@@ -50,7 +53,7 @@ api.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-
+    
     return Promise.reject(error);
   }
 );
