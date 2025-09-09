@@ -41,6 +41,12 @@ import { Box } from '@mui/material';
 
 
 
+import OurStoryPage from './pages/OurStoryPage';
+import JournalListPage from './pages/JournalListPage';
+import JournalDetailPage from './pages/JournalDetailPage';
+
+
+
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 
 const PAYPAL_CLIENT_ID="AST9NFYeTjqE7MvAbqwm6FWrKLf9vwYiuGbZSC3sWnku6ePotcT6HnIUzMXjwFfHJ_3VG7aFwlVbhaZj"; // Use an environment variable for this in a real app
@@ -63,6 +69,12 @@ function App() {
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    
+                                        
+                    <Route path="/our-story" element={<OurStoryPage />} />
+                    <Route path="/journal" element={<JournalListPage />} />
+                    <Route path="/journal/:slug" element={<JournalDetailPage />} />
+
                     
                     {/* Protected routes */}
                     <Route element={<PrivateRoute />}>
