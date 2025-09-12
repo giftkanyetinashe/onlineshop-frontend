@@ -76,7 +76,9 @@ const ProductDetail = () => {
 
   // All memoized logic and event handlers remain the same
   const variantsBySize = useMemo(() => {
-    if (!product?.variants) return {};
+    if (!product?.variants) {
+      return {};
+    }
     return product.variants.reduce((acc, variant) => {
       const size = variant.size || 'Default';
       (acc[size] = acc[size] || []).push(variant);
@@ -95,11 +97,15 @@ const ProductDetail = () => {
   
   const handleShadeSelect = (variant) => {
     setSelectedVariant(variant);
-    if (variant.variant_image) setCurrentImage(variant.variant_image);
+    if (variant.variant_image) {
+      setCurrentImage(variant.variant_image);
+    }
   };
 
   const handleAddToCart = () => {
-    if (isAdding || justAdded || !selectedVariant) return;
+    if (isAdding || justAdded || !selectedVariant) {
+      return;
+    }
     setIsAdding(true);
     addToCart(product, selectedVariant, quantity);
     setTimeout(() => {
@@ -112,7 +118,9 @@ const ProductDetail = () => {
   
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    if (!reviewTitle || !reviewComment) return setReviewError("A title and comment are required.");
+    if (!reviewTitle || !reviewComment) {
+      return setReviewError("A title and comment are required.");
+    }
     setIsSubmittingReview(true);
     setReviewError('');
     try {
@@ -134,9 +142,19 @@ const ProductDetail = () => {
   const hasDiscount = selectedVariant && selectedVariant.discount_price && parseFloat(selectedVariant.discount_price) < parseFloat(selectedVariant.price);
 
 
-  if (loading) return <Container maxWidth="xl" sx={{ my: 8 }}><ProductSkeleton /></Container>;
-  if (error) return <Container maxWidth="sm" sx={{ my: 8, textAlign: 'center' }}><Alert severity="error">{error}</Alert></Container>;
-  if (!product) return null;
+  if (loading) {
+    return <Container maxWidth="xl" sx={{ my: 8 }}><ProductSkeleton /></Container>;
+  }
+  if (error) {
+    return (
+      <Container maxWidth="sm" sx={{ my: 8, textAlign: 'center' }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
+  if (!product) {
+    return null;
+  }
 
   return (
     <Box>
@@ -151,7 +169,7 @@ const ProductDetail = () => {
           {/* --- Image Gallery (Unchanged) --- */}
           <Grid item xs={12} md={7}>
             <Paper elevation={0} sx={{ position: 'sticky', top: 100, border: `1px solid ${theme.palette.divider}`, borderRadius: 4, p: 1 }}>
-              <Box sx={{ overflow: 'hidden', borderRadius: 3, aspectRatio: '1/1' }}>
+              <Box sx={{ overflow: 'hidden', borderRadius: 3, aspectRatio: '1/1', maxWidth: '500px', mx: 'auto' }}>
                 <AnimatePresence>
                     <motion.img key={currentImage} src={currentImage} alt={product.name} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </AnimatePresence>
