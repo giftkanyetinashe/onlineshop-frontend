@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://159.223.33.165/api/',
+  // THE FIX #1: Use a relative baseURL. The browser will handle the rest.
+  baseURL: '/api/',
   headers: {
     'Accept': 'application/json',
   },
@@ -35,7 +36,8 @@ api.interceptors.response.use(
       
       try {
         const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post('http://159.223.33.165/api/auth/token/refresh/', {
+        // THE FIX #2: Use a relative URL for the refresh endpoint as well.
+        const response = await axios.post('/api/auth/token/refresh/', {
           refresh: refreshToken,
         });
         
