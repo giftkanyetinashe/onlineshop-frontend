@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://onlineshop-backend-3rit.onrender.com/api/',
+  baseURL: 'https://159.223.33.165/api/',
   headers: {
     'Accept': 'application/json',
   },
