@@ -26,6 +26,7 @@ const Content = () => {
 
   useEffect(() => {
     fetchContentData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const showNotification = (message, type = 'success') => {
