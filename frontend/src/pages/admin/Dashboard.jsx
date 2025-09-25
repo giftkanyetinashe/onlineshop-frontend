@@ -232,6 +232,7 @@ const AdminDashboard = () => {
                 { label: 'Categories', path: '/admin/categories' },
                 { label: 'Banners', path: '/admin/banner' },
                 { label: 'Reports', path: '/admin/reports' },
+                { label: 'Content', path: '/admin/content' },
                 {/* { label: 'Settings', path: '/admin/settings' }, */}
               ].map((item) => (
                 <Button key={item.path} component={RouterLink} to={item.path} variant="text" sx={{ color: 'text.primary', fontWeight: 500, '&.active': { color: 'primary.main' } }}>
