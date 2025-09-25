@@ -1,106 +1,116 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../services/api';
-import LoadingSpinner from '../components/LoadingSpinner';
-import './content.css';
+import api from '../services/api';
+import '../styles/ourstory.css';
 
-function OurStoryPage() {
+const OurStory = () => {
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const fetchStory = async () => {
       try {
-        const response = await axios.get('/content/our-story/');
+        const response = await api.get('content/our-story/active/');
         setStory(response.data);
+        setTimeout(() => setIsVisible(true), 100);
       } catch (err) {
-        setError('Failed to load our story. Please try again later.');
-        console.error(err);
+        console.error('Our Story fetch error:', err);
+        setError('There was a problem loading our story. Please check back later.');
       } finally {
         setLoading(false);
       }
     };
+
     fetchStory();
   }, []);
 
-  if (loading) return (
-    <div className="story-loading-container">
-      <div className="loading-pulse">
-        <LoadingSpinner />
-        <p className="loading-text">Crafting your experience</p>
+  if (loading) {
+    return (
+      <div className="our-story-loading fade-in">
+        <div className="loading-spinner"></div>
+        <p>Loading our story...</p>
       </div>
-    </div>
-  );
-  
-  if (error) return <p className="story-error-message">{error}</p>;
-  if (!story) return null;
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="our-story-error fade-in">
+        <div className="error-icon">📖</div>
+        <h3>Story Unavailable</h3>
+        <p>{error}</p>
+        <button 
+          className="cta-button" 
+          onClick={() => window.location.reload()}
+          style={{marginTop: '2rem'}}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (!story) {
+    return (
+      <div className="our-story-empty fade-in">
+        <div className="empty-icon">✨</div>
+        <h2>Our Story is Being Written</h2>
+        <p>We're crafting our story and will share it with you soon.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="story-page">
-      {/* Animated background elements */}
-      <div className="background-shapes">
-        <div className="shape shape-1"></div>
-        <div className="shape shape-2"></div>
-        <div className="shape shape-3"></div>
-      </div>
-      
-      <div className="story-hero-section">
-        <div className="hero-content">
-          <h1 className="hero-title" data-text={story.main_heading}>
-            <span>{story.main_heading}</span>
-          </h1>
-          <div className="hero-scroll-indicator">
-            <span>Scroll to explore</span>
-            <div className="scroll-line"></div>
-          </div>
-        </div>
-        <div className="hero-visual">
-          <div className="floating-card">
-            <img src={story.founder_image} alt="Nuareskyn Founder" className="founder-visual" />
-          </div>
-        </div>
-      </div>
-      
-      <div className="story-content-wrapper">
-        <div className="content-main">
-          <section className="story-section founder-story">
-            <div className="section-header">
-              <h2 className="section-title">{story.title}</h2>
-              <div className="title-underline"></div>
+    <div className={`our-story-container ${isVisible ? 'fade-in' : ''}`}>
+      <article className="our-story-article">
+        {/* Hero Section */}
+        <header className="story-hero">
+          {story.featured_image && (
+            <div className="story-hero-image">
+              <img 
+                src={story.featured_image} 
+                alt={story.image_alt_text || story.title}
+                loading="eager"
+              />
             </div>
-            <div className="text-content">
-              <p>{story.content}</p>
-            </div>
-            <div className="visual-element">
-              <div className="floating-stat">
-                <span className="stat-number">2018</span>
-                <span className="stat-label">Year of Foundation</span>
-              </div>
-            </div>
-          </section>
-          
-          {story.mission_statement && (
-            <section className="story-section mission-story">
-              <div className="mission-card">
-                <div className="card-border"></div>
-                <div className="card-content">
-                  <h3 className="mission-title">Our Ethos</h3>
-                  <blockquote className="mission-statement">
-                    <div className="quote-mark">"</div>
-                    {story.mission_statement}
-                  </blockquote>
-                  <div className="mission-decoration">
-                    <div className="decoration-line"></div>
-                    <div className="symbol-icon">✦</div>
-                  </div>
-                </div>
-              </div>
-            </section>
           )}
+          <div className="story-hero-content">
+            <h1 className="story-title slide-in">{story.title}</h1>
+            {story.subtitle && (
+              <h2 className="story-subtitle slide-in">{story.subtitle}</h2>
+            )}
+            <div className="story-meta slide-in">
+              <span>Last updated: {new Date(story.updated_at).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Section */}
+        <div className="story-content">
+          <div 
+            className="story-html-content"
+            dangerouslySetInnerHTML={{ __html: story.content }}
+          />
         </div>
-      </div>
+
+        {/* Call to Action */}
+        <footer className="story-footer">
+          <div className="story-cta">
+            <h3>Continue Your Journey</h3>
+            <p>Discover more about our philosophy, ingredients, and commitment to luxury beauty in our journal.</p>
+            <a href="/journal" className="cta-button">
+              Explore Our Journal
+            </a>
+          </div>
+        </footer>
+      </article>
     </div>
   );
-}
+};
 
-export default OurStoryPage;
+export default OurStory;

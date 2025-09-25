@@ -32,6 +32,7 @@ import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminProductDetail2 from './pages/admin/AdminProductDetail';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminReports from './pages/admin/AdminReports';
+import Content from './pages/admin/content';
 
 
 import OrderConfirmationPage from './pages/OrderConfirmationPage'; 
@@ -103,7 +104,7 @@ function App() {
                       <Route path="/admin/products/:slug" element={<AdminProductDetail2 />} />
                       <Route path="/admin/categories" element={<AdminCategoriesPage />} />
                       <Route path="/admin/reports" element={<AdminReports />} />
-                  
+                      <Route path="/admin/content" element={<Content />} />
                     </Route>
                     <Route path="/test" element={<TestPage />} />
                   </Routes>
